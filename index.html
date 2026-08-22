@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<title>Lage</title>
+<style>
+:root {
+  --paper: #f6f1e8;
+  --paper-deep: #efe6d6;
+  --ink: #1c1712;
+  --muted: #6b6156;
+  --rule: #c9bba6;
+  --rust: #8c3220;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink);
+  font: 15px/1.4 "Source Sans 3", "Helvetica Neue", ui-sans-serif, system-ui, sans-serif; }
+.bar {
+  position: sticky; top: 0; z-index: 5;
+  background: var(--paper);
+  border-bottom: 1px solid var(--rule);
+  padding: 0.7rem 1rem 0.75rem;
+}
+.bar-inner { max-width: 52rem; margin: 0 auto; }
+.kicker {
+  font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
+  text-transform: uppercase; color: var(--rust); margin: 0 0 0.45rem;
+}
+.nav { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.nav button {
+  appearance: none; border: 1px solid var(--rule); background: transparent;
+  color: var(--ink); border-radius: 999px; padding: 0.28rem 0.7rem;
+  font: 600 0.78rem/1.2 inherit; cursor: pointer;
+}
+.nav button:hover { border-color: var(--rust); color: var(--rust); }
+.nav button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.stage { height: calc(100% - 0px); }
+iframe { display: block; width: 100%; height: calc(100vh - 4.6rem); border: 0; background: var(--paper); }
+.lock {
+  min-height: 100%; display: flex; align-items: center; justify-content: center;
+  padding: 2rem; text-align: center;
+}
+.lock h1 { font-family: ui-serif, Georgia, serif; font-weight: 500; font-size: 1.8rem; margin: 0 0 0.4rem; }
+.lock p { color: var(--muted); margin: 0; max-width: 22rem; }
+.err { color: #8c3220; }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+const enc = new TextEncoder();
+const dec = new TextDecoder();
+
+function tokenFromUrl(){
+  const m = /(?:^|[#&])k=([A-Za-z0-9_-]{43,})/.exec(location.hash || "");
+  return m ? m[1] : null;
+}
+function editionFromUrl(){
+  const m = /(?:^|[#&])e=([0-9]{4}-[0-9]{2}-[0-9]{2}[a-z0-9-]*)/.exec(location.hash || "");
+  return m ? m[1] : null;
+}
+function b64urlBytes(s){
+  const pad = s.length % 4;
+  const bin = atob(s.replace(/-/g, "+").replace(/_/g, "/") + (pad ? "=".repeat(4 - pad) : ""));
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}
+async function keyFromToken(token){
+  const raw = b64urlBytes(token);
+  if (raw.length !== 32) throw new Error("token");
+  return crypto.subtle.importKey("raw", raw, {name:"AES-GCM"}, false, ["decrypt"]);
+}
+async function decryptLin1(buf, key){
+  const bytes = buf instanceof Uint8Array ? buf : new Uint8Array(buf);
+  if (dec.decode(bytes.subarray(0,4)) !== "LIN1") throw new Error("format");
+  const nonce = bytes.slice(20,32);
+  const ct = bytes.subarray(32);
+  const pt = await crypto.subtle.decrypt({name:"AES-GCM", iv:nonce}, key, ct);
+  return dec.decode(pt);
+}
+function locked(msg){
+  document.getElementById("app").innerHTML =
+    `<div class="lock"><div><p class="kicker">Lage</p><h1>Kein Zugang</h1><p class="${msg ? "err" : ""}">${msg || "Diese Seite öffnet nur über den direkten Link."}</p></div></div>`;
+}
+function setHash(token, edition){
+  const next = edition ? `#k=${token}&e=${edition}` : `#k=${token}`;
+  if (location.hash !== next) history.replaceState(null, "", next);
+}
+
+async function boot(){
+  const token = tokenFromUrl();
+  if (!token) { locked(); return; }
+  let key;
+  try { key = await keyFromToken(token); }
+  catch (e) { locked("Dieser Link funktioniert nicht."); return; }
+
+  let editions;
+  try {
+    const res = await fetch("editions.json", {cache: "no-cache"});
+    if (!res.ok) throw new Error("manifest");
+    editions = await res.json();
+  } catch (e) {
+    locked("Die Ausgabenliste fehlt gerade.");
+    return;
+  }
+  if (!editions.length) { locked("Noch keine Ausgabe."); return; }
+
+  const wanted = editionFromUrl();
+  const start = editions.find(x => x.id === wanted) || editions[0];
+
+  const app = document.getElementById("app");
+  app.innerHTML = `<div class="bar"><div class="bar-inner">
+    <p class="kicker">Lage</p>
+    <nav class="nav" id="nav"></nav>
+  </div></div>
+  <iframe id="frame" title="Ausgabe"></iframe>`;
+
+  const nav = document.getElementById("nav");
+  const frame = document.getElementById("frame");
+
+  async function show(ed){
+    [...nav.querySelectorAll("button")].forEach(b => b.classList.toggle("on", b.dataset.id === ed.id));
+    setHash(token, ed.id);
+    document.title = ed.title ? `Lage · ${ed.title}` : "Lage";
+    try {
+      const res = await fetch(`editions/${ed.id}.bin`, {cache: "no-cache"});
+      if (!res.ok) throw new Error("missing");
+      const html = await decryptLin1(await res.arrayBuffer(), key);
+      frame.srcdoc = html;
+    } catch (e) {
+      frame.srcdoc = `<p style="font:16px/1.5 sans-serif;padding:2rem">Diese Ausgabe lässt sich nicht öffnen.</p>`;
+    }
+  }
+
+  for (const ed of editions) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.id = ed.id;
+    b.textContent = ed.label || ed.id;
+    b.addEventListener("click", () => show(ed));
+    nav.appendChild(b);
+  }
+  show(start);
+}
+
+boot();
+</script>
+</body>
+</html>
