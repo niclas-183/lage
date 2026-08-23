@@ -1,5 +1,11 @@
 [
   {
+    "id": "2026-08-23-woche",
+    "kind": "woche",
+    "label": "16.–23. Aug",
+    "title": "Wochenrückblick"
+  },
+  {
     "id": "2026-08-22-woche",
     "kind": "woche",
     "label": "15.–22. Aug",
