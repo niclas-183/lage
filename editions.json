@@ -1,5 +1,11 @@
 [
   {
+    "id": "2026-08-24",
+    "kind": "tag",
+    "label": "24. Aug",
+    "title": "Tageslage"
+  },
+  {
     "id": "2026-08-23-woche",
     "kind": "woche",
     "label": "16.–23. Aug",
