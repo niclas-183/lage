@@ -33,6 +33,14 @@ html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink
   font-size: 0.68rem; font-weight: 700; letter-spacing: 0.16em;
   text-transform: uppercase; color: var(--rust); margin: 0 0 0.45rem;
 }
+.cats { display: flex; gap: 0.35rem; margin: 0 0 0.5rem; }
+.cats button {
+  appearance: none; border: 0; background: transparent;
+  color: var(--muted); padding: 0; margin: 0 0.7rem 0 0;
+  font: 700 0.72rem/1.2 inherit; letter-spacing: 0.14em;
+  text-transform: uppercase; cursor: pointer;
+}
+.cats button.on { color: var(--rust); }
 .nav { display: flex; flex-wrap: wrap; gap: 0.4rem; }
 .nav button {
   appearance: none; border: 1px solid var(--rule); background: transparent;
@@ -41,8 +49,7 @@ html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink
 }
 .nav button:hover { border-color: var(--rust); color: var(--rust); }
 .nav button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-.stage { height: calc(100% - 0px); }
-iframe { display: block; width: 100%; height: calc(100vh - 4.6rem); border: 0; background: var(--paper); }
+iframe { display: block; width: 100%; height: calc(100vh - 6.2rem); border: 0; background: var(--paper); }
 .lock {
   min-height: 100%; display: flex; align-items: center; justify-content: center;
   padding: 2rem; text-align: center;
@@ -113,21 +120,32 @@ async function boot(){
   }
   if (!editions.length) { locked("Noch keine Ausgabe."); return; }
 
+  function catOf(ed){ return ed.kind === "gaming" ? "gaming" : "lage"; }
   const wanted = editionFromUrl();
-  const start = editions.find(x => x.id === wanted) || editions[0];
+  const start = editions.find(x => x.id === wanted) || editions.find(x => catOf(x) === "lage") || editions[0];
+  let cat = catOf(start);
 
   const app = document.getElementById("app");
   app.innerHTML = `<div class="bar"><div class="bar-inner">
-    <p class="kicker">Lage</p>
+    <p class="kicker" id="kicker">Lage</p>
+    <div class="cats" id="cats">
+      <button type="button" data-cat="lage">Nachrichten</button>
+      <button type="button" data-cat="gaming">Gaming</button>
+    </div>
     <nav class="nav" id="nav"></nav>
   </div></div>
   <iframe id="frame" title="Ausgabe"></iframe>`;
 
   const nav = document.getElementById("nav");
   const frame = document.getElementById("frame");
+  const kicker = document.getElementById("kicker");
+  const cats = document.getElementById("cats");
 
   async function show(ed){
-    [...nav.querySelectorAll("button")].forEach(b => b.classList.toggle("on", b.dataset.id === ed.id));
+    cat = catOf(ed);
+    kicker.textContent = cat === "gaming" ? "Gaming" : "Lage";
+    [...cats.querySelectorAll("button")].forEach(b => b.classList.toggle("on", b.dataset.cat === cat));
+    renderNav(ed.id);
     setHash(token, ed.id);
     document.title = ed.title ? `Lage · ${ed.title}` : "Lage";
     try {
@@ -140,14 +158,34 @@ async function boot(){
     }
   }
 
-  for (const ed of editions) {
-    const b = document.createElement("button");
-    b.type = "button";
-    b.dataset.id = ed.id;
-    b.textContent = ed.label || ed.id;
-    b.addEventListener("click", () => show(ed));
-    nav.appendChild(b);
+  function renderNav(activeId){
+    nav.innerHTML = "";
+    const list = editions.filter(ed => catOf(ed) === cat);
+    if (!list.length) {
+      nav.textContent = cat === "gaming" ? "Noch keine Gaming-Ausgabe." : "Noch keine Ausgabe.";
+      return;
+    }
+    for (const ed of list) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.dataset.id = ed.id;
+      b.textContent = ed.label || ed.id;
+      b.classList.toggle("on", ed.id === activeId);
+      b.addEventListener("click", () => show(ed));
+      nav.appendChild(b);
+    }
   }
+
+  [...cats.querySelectorAll("button")].forEach(b => {
+    b.addEventListener("click", () => {
+      const nextCat = b.dataset.cat;
+      const cur = editions.find(x => x.id === editionFromUrl());
+      if (cur && catOf(cur) === nextCat) return;
+      const pick = editions.find(x => catOf(x) === nextCat);
+      if (pick) show(pick);
+    });
+  });
+
   show(start);
 }
 

@@ -1,5 +1,11 @@
 [
   {
+    "id": "2026-08-27-gamescom",
+    "kind": "gaming",
+    "label": "Gamescom",
+    "title": "gamescom 2026"
+  },
+  {
     "id": "2026-08-27",
     "kind": "tag",
     "label": "27. Aug",
