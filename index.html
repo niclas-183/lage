@@ -9,7 +9,9 @@
 <link rel="icon" href="favicon-32.png" sizes="32x32" type="image/png">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta name="theme-color" content="#f6f1e8">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#f6f1e8">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#161310">
 <style>
 :root {
   --paper: #f6f1e8;
@@ -57,6 +59,30 @@ iframe { display: block; width: 100%; height: calc(100vh - 6.2rem); border: 0; b
 .lock h1 { font-family: ui-serif, Georgia, serif; font-weight: 500; font-size: 1.8rem; margin: 0 0 0.4rem; }
 .lock p { color: var(--muted); margin: 0; max-width: 22rem; }
 .err { color: #8c3220; }
+
+html { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161310;
+    --paper-deep: #211c18;
+    --ink: #f3eee6;
+    --muted: #a3988c;
+    --rule: #3f372f;
+    --rust: #d46a52;
+  }
+  .err { color: #e8927c; }
+}
+@media print {
+  :root {
+    color-scheme: light;
+    --paper: #f6f1e8;
+    --paper-deep: #efe6d6;
+    --ink: #1c1712;
+    --muted: #6b6156;
+    --rule: #c9bba6;
+    --rust: #8c3220;
+  }
+}
 </style>
 </head>
 <body>
@@ -100,6 +126,44 @@ function locked(msg){
 function setHash(token, edition){
   const next = edition ? `#k=${token}&e=${edition}` : `#k=${token}`;
   if (location.hash !== next) history.replaceState(null, "", next);
+}
+
+
+const EDITION_DARK = `<style id="lage-auto-dark">html { color-scheme: light dark; }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #161310;
+    --paper-deep: #211c18;
+    --ink: #f3eee6;
+    --ink-soft: #d5cdc3;
+    --muted: #a3988c;
+    --rule: #3f372f;
+    --rust: #d46a52;
+    --rust-deep: #e8927c;
+  }
+  html, body { background: var(--paper); color: var(--ink); }
+  .sources a { border-bottom-color: #6a4c40; }
+  figcaption a { border-bottom-color: #4a4038; }
+  .video { background: #0d0b09; }
+}
+@media print {
+  :root {
+    color-scheme: light;
+    --paper: #ffffff;
+    --paper-deep: #f4eee4;
+    --ink: #1c1712;
+    --ink-soft: #3d352c;
+    --muted: #6b6156;
+    --rule: #c9bba6;
+    --rust: #8c3220;
+    --rust-deep: #6e2416;
+  }
+}</style>`;
+function withAutoDark(html){
+  if (html.includes('id="lage-auto-dark"')) return html;
+  const i = html.toLowerCase().indexOf("</head>");
+  if (i !== -1) return html.slice(0, i) + EDITION_DARK + html.slice(i);
+  return EDITION_DARK + html;
 }
 
 async function boot(){
@@ -152,7 +216,7 @@ async function boot(){
       const res = await fetch(`editions/${ed.id}.bin`, {cache: "no-cache"});
       if (!res.ok) throw new Error("missing");
       const html = await decryptLin1(await res.arrayBuffer(), key);
-      frame.srcdoc = html;
+      frame.srcdoc = withAutoDark(html);
     } catch (e) {
       frame.srcdoc = `<p style="font:16px/1.5 sans-serif;padding:2rem">Diese Ausgabe lässt sich nicht öffnen.</p>`;
     }
