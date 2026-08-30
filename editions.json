@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-08-30-gaming",
+    "kind": "gaming",
+    "label": "Gaming",
+    "title": "Gaming-Woche"
+  },
+  {
+    "id": "2026-08-30-woche",
+    "kind": "woche",
+    "label": "23.–30. Aug",
+    "title": "Wochenrückblick"
+  },
+  {
     "id": "2026-08-29",
     "kind": "tag",
     "label": "29. Aug",
