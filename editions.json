@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-09-06-gaming",
+    "kind": "gaming",
+    "label": "Gaming",
+    "title": "Gaming-Woche"
+  },
+  {
+    "id": "2026-09-06-woche",
+    "kind": "woche",
+    "label": "30. Aug–6. Sep",
+    "title": "Wochenrückblick"
+  },
+  {
     "id": "2026-09-05",
     "kind": "tag",
     "label": "5. Sep",
