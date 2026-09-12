@@ -50,8 +50,8 @@ html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
   padding: 0.05rem 0 0.25rem;
-  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
-  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  mask-image: linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
 }
 .nav::-webkit-scrollbar { height: 4px; }
 .nav::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 999px; }
@@ -236,7 +236,7 @@ async function boot(){
 
   function renderNav(activeId){
     nav.innerHTML = "";
-    const list = editions.filter(ed => catOf(ed) === cat);
+    const list = editions.filter(ed => catOf(ed) === cat).slice().reverse();
     if (!list.length) {
       nav.textContent = cat === "gaming" ? "Noch keine Gaming-Ausgabe." : "Noch keine Ausgabe.";
       return;
