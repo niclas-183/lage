@@ -43,11 +43,23 @@ html, body { height: 100%; margin: 0; background: var(--paper); color: var(--ink
   text-transform: uppercase; cursor: pointer;
 }
 .cats button.on { color: var(--rust); }
-.nav { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.nav {
+  display: flex; flex-wrap: nowrap; gap: 0.4rem;
+  overflow-x: auto; overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  padding: 0.05rem 0 0.25rem;
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.5rem), transparent);
+}
+.nav::-webkit-scrollbar { height: 4px; }
+.nav::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 999px; }
 .nav button {
   appearance: none; border: 1px solid var(--rule); background: transparent;
   color: var(--ink); border-radius: 999px; padding: 0.28rem 0.7rem;
   font: 600 0.78rem/1.2 inherit; cursor: pointer;
+  flex: 0 0 auto; white-space: nowrap;
 }
 .nav button:hover { border-color: var(--rust); color: var(--rust); }
 .nav button.on { background: var(--ink); color: var(--paper); border-color: var(--ink); }
@@ -229,6 +241,7 @@ async function boot(){
       nav.textContent = cat === "gaming" ? "Noch keine Gaming-Ausgabe." : "Noch keine Ausgabe.";
       return;
     }
+    let activeBtn = null;
     for (const ed of list) {
       const b = document.createElement("button");
       b.type = "button";
@@ -237,6 +250,12 @@ async function boot(){
       b.classList.toggle("on", ed.id === activeId);
       b.addEventListener("click", () => show(ed));
       nav.appendChild(b);
+      if (ed.id === activeId) activeBtn = b;
+    }
+    if (activeBtn) {
+      requestAnimationFrame(() => {
+        activeBtn.scrollIntoView({ inline: "nearest", block: "nearest", behavior: "smooth" });
+      });
     }
   }
 
