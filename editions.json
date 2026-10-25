@@ -1,5 +1,17 @@
 [
   {
+    "id": "2026-10-25-gaming",
+    "kind": "gaming",
+    "label": "Gaming",
+    "title": "Gaming-Woche"
+  },
+  {
+    "id": "2026-10-25-woche",
+    "kind": "woche",
+    "label": "18.–25. Okt",
+    "title": "Wochenrückblick"
+  },
+  {
     "id": "2026-10-22",
     "kind": "tag",
     "label": "20.–22. Okt",
